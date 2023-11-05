@@ -2220,6 +2220,7 @@ end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 max_safehouse_rooms = max_safehouse_rooms or function(info)
 	local M_safehouse = managers.custom_safehouse
+	local G_safehouse = Global.custom_safehouse_manager
 	local function max_rooms_tier()
 		for room_id, data in pairs(G_safehouse.rooms) do
 			local max_tier = data.tier_max
