@@ -2138,13 +2138,14 @@ end
 --                                                                                 Complete All Side Jobs                                                                            --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 complete_all_side_jobs = complete_all_side_jobs or function(info)
-	local original_complete_daily = CustomSafehouseManager.complete_daily
-	local original_reward_daily = CustomSafehouseManager.reward_daily
-	function CustomSafehouseManager:complete_and_reward_daily()
-		if not self._global.daily.trophy.completed then
-			original_complete_daily(self)
-			original_reward_daily(self)
+	local original_complete_daily = original_complete_daily or CustomSafehouseManager.set_active_daily
+	function CustomSafehouseManager:set_active_daily(id)
+		if self:get_daily_challenge() and self:get_daily_challenge().id ~= id then
+			self:generate_daily(id)
 		end
+		self:complete_and_reward_daily(id)
+
+		return original_complete_daily(self, id)
 	end
 	function CustomSafehouseManager:has_rewarded_daily()
 		local is_just_completed = false
@@ -2218,6 +2219,7 @@ end
 --                                                                                 Safe House Options                                                                              --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 max_safehouse_rooms = max_safehouse_rooms or function(info)
+	local M_safehouse = managers.custom_safehouse
 	local function max_rooms_tier()
 		for room_id, data in pairs(G_safehouse.rooms) do
 			local max_tier = data.tier_max
@@ -2301,19 +2303,21 @@ disable_safehouse_raid = disable_safehouse_raid or function(info)
 	end
 end
 complete_all_trophies = complete_all_trophies or function(info)
+	local M_safehouse = managers.custom_safehouse
 	local function unlock_safehouse_trophies()
-		local trophies = managers.custom_safehouse:trophies()
+		local trophies = M_safehouse:trophies()
 		for _, trophy in pairs(trophies) do
 			for objective_id in pairs (trophy.objectives) do
 				local objective = trophy.objectives[objective_id]
 				objective.verify = false
-				managers.custom_safehouse:on_achievement_progressed(objective.progress_id, objective.max_progress)
+				M_safehouse:on_achievement_progressed(objective.progress_id, objective.max_progress)
 			end
 		end
 	end
 	unlock_safehouse_trophies()
 end
 complete_all_achievements = complete_all_achievements or function(info)
+	local M_achievement = managers.achievment
 	local function complete_achievements()
 		local _award = M_achievement.award
 		for id in pairs(M_achievement.achievments) do
