@@ -4,23 +4,23 @@ Payday 2 Trainer
 
 ### Pre-Game List
 
-- [x] 1: Player Progress Options.
-- [x] 2: Complete All Side Jobs.
-- [x] 3: Unlock All Options.
-- [x] 4: SafeHouse Options.
+- 1: Player Progress Options.
+- 2: Complete All Side Jobs.
+- 3: Unlock All Options.
+- 4: SafeHouse Options.
 
 ### In-Game List
 
-- [x] 1: Player Interact With Options.
-- [x] 2: Alarm Options.
-- [x] 3: Player Interaction Options.
-- [x] 4: Player Movement Options.
-- [x] 5: Player Weapon Options.
-- [x] 6: Player Equipment Options.
-- [x] 7: Player Options.
-- [x] 8: Heist Options.
-- [x] 9: Preplanning Options.
-- [x] 10: Player Skill Options.
+- 1: Player Interact With Options.
+- 2: Alarm Options.
+- 3: Player Interaction Options.
+- 4: Player Movement Options.
+- 5: Player Weapon Options.
+- 6: Player Equipment Options.
+- 7: Player Options.
+- 8: Heist Options.
+- 9: Preplanning Options.
+- 10: Player Skill Options.
 
 ### To-Do List
 
