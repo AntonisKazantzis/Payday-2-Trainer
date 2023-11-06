@@ -5,6 +5,13 @@ Payday 2 Trainer
 Download
 [Here](https://github.com/AntonisKazantzis/Payday-2-Trainer/releases/download/v1.4/Payday-2-Trainer-master.zip)
 
+### Installation Guide
+
+- 1: Download the zip.
+- 2: Extract the file from inside, copy and paste it inside of your payday 2 mods directory.
+- 3: Open payday 2 go to mods keybinds, find the trainer and set a keybind.
+
+
 ### Pre-Game List
 
 - 1: Player Progress Options.
