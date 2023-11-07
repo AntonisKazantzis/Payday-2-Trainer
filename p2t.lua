@@ -3295,6 +3295,32 @@ unlock_all_items = unlock_all_items or function(info)
     end
 
 end
+
+smart_unloker = smart_unloker or function(info)
+    local original_verify_dlcs = WINDLCManager._verify_dlcs
+ 
+    function WINDLCManager:_verify_dlcs()
+        original_verify_dlcs(self)
+
+        for dlc_name, dlc_data in pairs(Global.dlc_manager.all_dlc_data) do
+            if dlc_data.external or not dlc_data.app_id or dlc_data.app_id == "218620" then
+                dlc_data.verified = true
+            end
+        end
+        
+    end
+    
+    local original_check_dlc_data = WinSteamDLCManager._check_dlc_data
+    
+    function WinSteamDLCManager:_check_dlc_data(dlc_data)
+        if dlc_data.verified then
+            return true
+        end
+        
+        return original_check_dlc_data(self, dlc_data)
+    end
+    
+end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                      Open Menu                                                                                    --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -3710,6 +3736,7 @@ unlock_all_options = unlock_all_options or
 		{},
 		{ text = "Unlock All Inventory Slots", callback = unlock_all_inventory_slots },
 		{ text = "Unlock All Items", callback = unlock_all_items },
+		{ text = "Smart Unlocker", callback = smart_unloker },
 		{},
 		{ text = "Back", callback = back_to_main_options},
 		{ text = "Cancel", is_cancel_button = true, is_focused_button = true },
@@ -3770,7 +3797,7 @@ else
 	{
 		{},
 		{ text = "Player Progress Options", callback = call_player_progress }, 
-		{ text = "Complete All Side Jobs", callback = complete_all_side_jobs }, 
+		{ text = "Complete All Side Jobs", callback = complete_all_side_jobs },
 		{ text = "SafeHouse Options", callback = call_safehouse }, 
         { text = "Unlock All Options", callback = call_unlock_all }, 
 		{},
