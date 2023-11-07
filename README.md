@@ -31,8 +31,3 @@ Download
 - 8: Heist Options.
 - 9: Preplanning Options.
 - 10: Player Skill Options.
-
-### To-Do List
-
-- [ ] Task 1: Implement custom UI.
-- [ ] Task 2: Seperate functions to files.
