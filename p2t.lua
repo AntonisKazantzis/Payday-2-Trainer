@@ -3771,7 +3771,8 @@ else
 		{},
 		{ text = "Player Progress Options", callback = call_player_progress }, 
 		{ text = "Complete All Side Jobs", callback = complete_all_side_jobs }, 
-		{ text = "SafeHouse Options", callback = call_safehouse }, { text = "Unlock All Options", callback = call_unlock_all }, 
+		{ text = "SafeHouse Options", callback = call_safehouse }, 
+        { text = "Unlock All Options", callback = call_unlock_all }, 
 		{},
 
 		{ text = "Cancel", is_cancel_button = true, is_focused_button = true }
