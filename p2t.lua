@@ -128,7 +128,7 @@ function interactbytweak(...)
     end
 end
 
-function grabsmallloot()
+local function grabsmallloot()
 
     interactbytweak("cut_glass", "crate_loot", "crate_loot_crowbar", "safe_loot_pickup", "diamond_pickup",
         "tiara_pickup", "money_wrap_single_bundle", "invisible_interaction_open", "mus_pku_artifact")
@@ -142,7 +142,7 @@ grab_all_small_loot = grab_all_small_loot or function()
 
 end
 
-function graballbigloot()
+local function graballbigloot()
 
     interactbytweak("trai_printing_plates_carry", "diamond_pickup", "red_diamond_pickup", "diamonds_pickup_full",
         "diamonds_pickup", "shape_charge_plantable", "gen_pku_cocaine_pure", "money_small", "money_scanner",
@@ -162,7 +162,7 @@ grab_all_big_loot = grab_all_big_loot or function()
 
 end
 
-function quicklyrobstuff()
+local function quicklyrobstuff()
 
     interactbytweak('weapon_case', 'cash_register', 'requires_ecm_jammer_atm', 'pick_lock_hard',
         'pick_lock_hard_no_skill', 'pick_lock_deposit_transport', 'gage_assignment')
@@ -176,7 +176,7 @@ quickly_rob_stuff = quickly_rob_stuff or function()
 
 end
 
-function openalldoors()
+local function openalldoors()
 
     interactbytweak("cas_open_door", "open_door_with_keys", "requires_ecm_jammer_double", "requires_ecm_jammer",
         "cas_security_door", "cas_open_securityroom_door", "pick_lock_easy_no_skill", "pick_lock_hard_no_skill",
@@ -191,7 +191,7 @@ open_all_doors = open_all_doors or function()
 
 end
 
-function drillupgall()
+local function drillupgall()
 
     interactbytweak("drill", "drill_upgrade", "drill_jammed", "lance_upgrade", "lance_jammed", "huge_lance_jammed")
 
@@ -204,7 +204,7 @@ upgrade_fix_drills = upgrade_fix_drills or function()
 
 end
 
-function barricadestuff()
+local function barricadestuff()
 
     interactbytweak('stash_planks', 'need_boards')
 
@@ -217,7 +217,7 @@ barricade_stuff = barricade_stuff or function()
 
 end
 
-function openatms()
+local function openatms()
 
     interactbytweak('requires_ecm_jammer_atm')
 
@@ -230,7 +230,7 @@ open_all_atms = open_all_atms or function()
 
 end
 
-function testopenallvaults()
+local function testopenallvaults()
 
     interactbytweak("pick_lock_hard", "pick_lock_hard_no_skill", "pick_lock_deposit_transport")
 
@@ -243,7 +243,7 @@ open_all_vaults = open_all_vaults or function()
 
 end
 
-function graballgagepackages()
+local function graballgagepackages()
 
     interactbytweak("gage_assignment")
 
@@ -258,30 +258,33 @@ end
 
 grab_everything = grab_everything or function()
 
-    function grabeverything()
+    local function grabeverything()
         grabsmallloot()
         graballbigloot()
         graballgagepackages()
     end
 
     grabeverything()
-    managers.mission._fading_debug_output:script().log('Grab Eveything - Activated', Color.green)
 
+    managers.mission._fading_debug_output:script().log('Grab Eveything - Activated', Color.green)
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                  Alarm Options                                                                                    --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 toggle_infinite_pagers = toggle_infinite_pagers or function(info)
     toggleInfinitePagers = not toggleInfinitePagers
-	
+
+	local GroupAIStateBase_on_successful_alarm_pager_bluff = GroupAIStateBase.on_successful_alarm_pager_bluff
+
     if toggleInfinitePagers then
-        function GroupAIStateBase:on_successful_alarm_pager_bluff()
-        end
+        function GroupAIStateBase:on_successful_alarm_pager_bluff() end
+
         managers.mission._fading_debug_output:script().log('Infinite Pagers - Activated', Color.green)
     else
         function GroupAIStateBase:on_successful_alarm_pager_bluff()
-            self._nr_successful_alarm_pager_bluffs = self._nr_successful_alarm_pager_bluffs + 1
+            GroupAIStateBase_on_successful_alarm_pager_bluff(self)
         end
+
         managers.mission._fading_debug_output:script().log('Infinite Pagers - Deactivated', Color.red)
     end
 end
@@ -289,155 +292,69 @@ end
 toggle_stop_calling_police = toggle_stop_calling_police or function(info)
     toggleStopCallingPolice = not toggleStopCallingPolice
 
+    local GroupAIStateBase_on_police_called = GroupAIStateBase.on_police_called
+
     if toggleStopCallingPolice then
-        function GroupAIStateBase:on_police_called(called_reason)
-        end
-        managers.mission._fading_debug_output:script().log(
-            'Makes Gaurds And People In General Stop Calling The Police - Activated', Color.green)
+        function GroupAIStateBase:on_police_called(...) end
+
+        managers.mission._fading_debug_output:script().log('Makes Gaurds And People In General Stop Calling The Police - Activated', Color.green)
     else
-        function GroupAIStateBase:on_police_called(called_reason)
-            if not self._ai_enabled then
-                return
-            end
-            local was_called = self._police_called
-            self._police_called = true
-            managers.mission:call_global_event("police_called")
-            self:_call_listeners("police_called")
-            if was_called then
-                return
-            end
-            if not self._police_call_clbk_id then
-                self:set_reason_called(called_reason)
-                managers.network:session():send_to_peers_synched("group_ai_event",
-                    self:get_sync_event_id("police_called"), self:get_sync_blame_id(self._called_reason))
-                self._police_call_clbk_id = "on_enemy_weapons_hot"
-                managers.enemy:add_delayed_clbk(self._police_call_clbk_id,
-                    callback(self, self, "on_enemy_weapons_hot", true), TimerManager:game():time() + 2)
-            end
+        function GroupAIStateBase:on_police_called(...)
+            GroupAIStateBase_on_police_called(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Makes Gaurds And People In General Stop Calling The Police - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_stop_reporting = toggle_stop_reporting or function(info)
     toggleStopReporting = not toggleStopReporting
 
+    local CivilianLogicFlee_clbk_chk_call_the_police = CivilianLogicFlee.clbk_chk_call_the_police
+
     if toggleStopReporting then
-        function CivilianLogicFlee.clbk_chk_call_the_police(ignore_this, data)
-        end
-        managers.mission._fading_debug_output:script().log(
-            'Stops Civilians From Reporting You To The Police - Activated', Color.green)
+        function CivilianLogicFlee.clbk_chk_call_the_police(...) end
+
+        managers.mission._fading_debug_output:script().log('Stops Civilians From Reporting You To The Police - Activated', Color.green)
     else
-        function CivilianLogicFlee.clbk_chk_call_the_police(ignore_this, data)
-            local my_data = data.internal_data
-            CopLogicBase.on_delayed_clbk(my_data, my_data.call_police_clbk_id)
-            my_data.call_police_clbk_id = nil
-            if managers.groupai:state():is_police_called() then
-                return
-            end
-            local my_areas = managers.groupai:state():get_areas_from_nav_seg_id(
-                data.unit:movement():nav_tracker():nav_segment())
-            local already_calling = false
-            for u_key, u_data in pairs(managers.enemy:all_civilians()) do
-                local civ_nav_seg = u_data.unit:movement():nav_tracker():nav_segment()
-                if my_areas[civ_nav_seg] and u_data.unit:anim_data().call_police then
-                    already_calling = true
-                    break
-                end
-            end
-            if not already_calling and
-                (not my_data.calling_the_police or not data.unit:movement():chk_action_forbidden("walk")) then
-                local action = {
-                    variant = "cmf_so_call_police",
-                    body_part = 1,
-                    type = "act",
-                    blocks = {}
-                }
-                my_data.calling_the_police = data.unit:movement():action_request(action)
-                if my_data.calling_the_police then
-                    CivilianLogicFlee._say_call_the_police(data, my_data)
-                    managers.groupai:state():on_criminal_suspicion_progress(nil, data.unit, "calling")
-                end
-            end
-            my_data.call_police_clbk_id = "civ_call_police" .. tostring(data.key)
-            CopLogicBase.add_delayed_clbk(my_data, my_data.call_police_clbk_id, callback(CivilianLogicFlee,
-                CivilianLogicFlee, "clbk_chk_call_the_police", data),
-                TimerManager:game():time() + math.lerp(15, 20, math.random()))
+        function CivilianLogicFlee.clbk_chk_call_the_police(...)
+            CivilianLogicFlee_clbk_chk_call_the_police(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Stops Civilians From Reporting You To The Police - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_disable_camera_alarm = toggle_disable_camera_alarm or function(info)
     toggleDisableCameraAlarm = not toggleDisableCameraAlarm
 
+    local SecurityCamera_sound_the_alarm = SecurityCamera._sound_the_alarm
+
     if toggleDisableCameraAlarm then
-        function SecurityCamera:_sound_the_alarm(detected_unit)
-        end
+        function SecurityCamera:_sound_the_alarm(...) end
+
         managers.mission._fading_debug_output:script().log('Disable Camera Alarm - Activated', Color.green)
     else
-        function SecurityCamera:_sound_the_alarm(detected_unit)
-            if self._alarm_sound then
-                return
-            end
-            if Network:is_server() then
-                if self._mission_script_element then
-                    self._mission_script_element:on_alarm(self._unit)
-                end
-                self:_send_net_event(self._NET_EVENTS.alarm_start)
-                self._call_police_clbk_id = "cam_call_cops" .. tostring(self._unit:key())
-                managers.enemy:add_delayed_clbk(self._call_police_clbk_id, callback(self, self, "clbk_call_the_police"),
-                    Application:time() + 7)
-                local reason_called = managers.groupai:state().analyse_giveaway("security_camera", detected_unit)
-                self._reason_called = managers.groupai:state()
-                    :fetch_highest_giveaway(self._reason_called, reason_called)
-                self:_destroy_all_detected_attention_object_data()
-                self:set_detection_enabled(false, nil, nil)
-            end
-            if self._suspicion_sound then
-                self._suspicion_sound = nil
-                self._unit:sound_source():post_event("camera_suspicious_signal_stop")
-            end
-            self._alarm_sound = self._unit:sound_source():post_event("camera_alarm_signal")
+        function SecurityCamera:_sound_the_alarm(...)
+            SecurityCamera_sound_the_alarm(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Disable Camera Alarm - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_remove_camera_sound = toggle_remove_camera_sound or function(info)
     toggleRemoveCameraSound = not toggleRemoveCameraSound
 
+    local SecurityCamera_set_suspicion_sound = SecurityCamera._set_suspicion_sound
+
     if toggleRemoveCameraSound then
-        function SecurityCamera:_set_suspicion_sound(suspicion_level)
-        end
+        function SecurityCamera:_set_suspicion_sound(...) end
+
         managers.mission._fading_debug_output:script().log('Remove Camera Sound - Activated', Color.green)
     else
-        function SecurityCamera:_set_suspicion_sound(suspicion_level)
-            if self._suspicion_sound_lvl == suspicion_level then
-                return
-            end
-            if not self._suspicion_sound then
-                self._suspicion_sound = self._unit:sound_source():post_event("camera_suspicious_signal")
-                self._suspicion_sound_lvl = 0
-            end
-            local pitch = self._suspicion_sound_lvl <= suspicion_level and 1 or 0.6
-            self._suspicion_sound_lvl = suspicion_level
-            self._unit:sound_source():set_rtpc("camera_suspicion_level_pitch", pitch)
-            self._unit:sound_source():set_rtpc("camera_suspicion_level", suspicion_level)
-            if Network:is_server() then
-                local suspicion_lvl_sync = math.clamp(math.ceil(suspicion_level * 6), 1, 6)
-                if suspicion_lvl_sync ~= self._suspicion_lvl_sync then
-                    self._suspicion_lvl_sync = suspicion_lvl_sync
-                    local event_id = self._NET_EVENTS["suspicion_" .. tostring(suspicion_lvl_sync)]
-                    self:_send_net_event(event_id)
-                end
-            end
+        function SecurityCamera:_set_suspicion_sound(...)
+            SecurityCamera_set_suspicion_sound(self, ...)
         end
         managers.mission._fading_debug_output:script().log('Remove Camera Sound - Deactivated', Color.red)
 
@@ -446,163 +363,83 @@ toggle_remove_camera_sound = toggle_remove_camera_sound or function(info)
 end
 
 toggle_stop_saying_calling_police = toggle_stop_saying_calling_police or function(info)
-    toggle = not toggle
-    if toggle then
-        function CopLogicArrest._say_call_the_police(data, my_data)
-        end
-        managers.mission._fading_debug_output:script().log(
-            'Stops The Police From Saying They Are Calling The Police All The Time - Activated', Color.green)
+    toggleStopSayingCallingPolice = not toggleStopSayingCallingPolice
+
+    local CopLogicArrest_say_call_the_police = CopLogicArrest._say_call_the_police
+
+    if toggleStopSayingCallingPolice then
+        function CopLogicArrest._say_call_the_police(...) end
+
+        managers.mission._fading_debug_output:script().log('Stops The Police From Saying They Are Calling The Police All The Time - Activated', Color.green)
     else
-        function CopLogicArrest._say_call_the_police(data, my_data)
-            if data.SO_access_str == "taser" then
-                return
-            end
-            local blame_list = {
-                body_bag = "a19",
-                drill = "a25",
-                criminal = "a23",
-                trip_mine = "a21",
-                w_hot = "a16",
-                civilian = "a15",
-                sentry_gun = "a20",
-                dead_cop = "a12",
-                hostage_cop = "a14",
-                hostage_civ = "a13",
-                dead_civ = "a11"
-            }
-            data.unit:sound():say(blame_list[my_data.call_in_event] or "a23", true)
+        function CopLogicArrest._say_call_the_police(...)
+            CopLogicArrest_say_call_the_police(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Stops The Police From Saying They Are Calling The Police All The Time - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_prevents = toggle_prevents or function(info)
     togglePrevents = not togglePrevents
+
+    local CopMovement_action_request = CopMovement.action_request
+
     if togglePrevents then
-        if not _actionRequest then
-            _actionRequest = CopMovement.action_request
-        end
-        function CopMovement:action_request(action_desc)
+        function CopMovement:action_request(action_desc, ...)
             if action_desc.variant == "run" then
                 return false
             end
-            return _actionRequest(self, action_desc)
+
+            return CopMovement_action_request(self, action_desc, ...)
         end
-        managers.mission._fading_debug_output:script().log('Prevent Panic Buttons & Intel Burning - Activated',
-            Color.green)
+
+        managers.mission._fading_debug_output:script().log('Prevent Panic Buttons & Intel Burning - Activated', Color.green)
     else
-        if not _actionRequest then
-            _actionRequest = CopMovement.action_request
+        function CopMovement:action_request(...)
+            CopMovement_action_request(self, ...)
         end
-        function CopMovement:action_request(action_desc)
-            if action_desc.variant == "run" then
-                return true
-            end
-            return _actionRequest(self, action_desc)
-        end
+
         managers.mission._fading_debug_output:script().log('Prevent Panic Buttons & Intel Burning - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_disable_cameras = toggle_disable_cameras or function(info)
     toggleDisableCameras = not toggleDisableCameras
-    if toggleDisableCameras then
 
+    local SecurityCamera_set_detection_enabled = SecurityCamera.set_detection_enabled
+
+    if toggleDisableCameras then
         for _, unit in pairs(SecurityCamera.cameras) do
             if unit:base()._last_detect_t ~= nil then
                 unit:base():set_update_enabled(state)
             end
         end
 		
-        function SecurityCamera:set_detection_enabled(state, settings, mission_element)
-        end
+        function SecurityCamera:set_detection_enabled(...) end
 
         managers.mission._fading_debug_output:script().log('Disable Cameras - Activated', Color.green)
     else
-
         for _, unit in pairs(SecurityCamera.cameras) do
             if unit:base()._last_detect_t ~= nil then
                 unit:base():set_update_enabled(true)
             end
         end
 
-        function SecurityCamera:set_detection_enabled(state, settings, mission_element)
-
-            if self._destroyed then
-                return
-            end
-
-            self:set_update_enabled(state)
-            self._mission_script_element = mission_element or self._mission_script_element
-
-            if state then
-                self._u_key = self._unit:key()
-                self._last_detect_t = self._last_detect_t or TimerManager:game():time()
-                self._detection_interval = 0.1
-                self._SO_access_str = "security"
-                self._SO_access = managers.navigation:convert_access_filter_to_number({self._SO_access_str})
-                self._visibility_slotmask = managers.slot:get_mask("AI_visibility")
-
-                if settings then
-                    self._cone_angle = settings.fov
-                    self._detection_delay = settings.detection_delay
-                    self._range = settings.detection_range
-                    self._suspicion_range = settings.suspicion_range
-                    self._team = managers.groupai:state():team_data(settings.team_id or
-                                                                        tweak_data.levels:get_default_team_ID(
-                            "combatant"))
-                end
-
-                self._detected_attention_objects = self._detected_attention_objects or {}
-                self._look_obj = self._unit:get_object(Idstring("CameraLens"))
-                self._yaw_obj = self._unit:get_object(Idstring("CameraYaw"))
-                self._pitch_obj = self._unit:get_object(Idstring("CameraPitch"))
-                self._pos = self._yaw_obj:position()
-                self._look_fwd = nil
-                self._tmp_vec1 = self._tmp_vec1 or Vector3()
-                self._suspicion_lvl_sync = 0
-            else
-                self._last_detect_t = nil
-                self:_destroy_all_detected_attention_object_data()
-                self._brush = nil
-                self._visibility_slotmask = nil
-                self._detection_delay = nil
-                self._look_obj = nil
-                self._yaw_obj = nil
-                self._pitch_obj = nil
-                self._pos = nil
-                self._look_fwd = nil
-                self._tmp_vec1 = nil
-                self._detected_attention_objects = nil
-                self._suspicion_lvl_sync = nil
-                self._team = nil
-
-                if not self._destroying then
-                    self:_stop_all_sounds()
-                    self:_deactivate_tape_loop()
-                end
-
-            end
-
-            if settings then
-                self:apply_rotations(settings.yaw, settings.pitch)
-            end
-            managers.groupai:state():register_security_camera(self._unit, state)
+        function SecurityCamera:set_detection_enabled(...)
+            SecurityCamera_set_detection_enabled(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Disable Cameras - Deactivated', Color.red)
-
     end
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                Interaction Options                                                                                --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 toggle_increased_interact_distance = toggle_increased_interact_distance or function(info)
     toggleIncreasedInteractDistance = not toggleIncreasedInteractDistance
+
+    local BaseInteractionExt_interact_distance = BaseInteractionExt.interact_distance
 
     if toggleIncreasedInteractDistance then
         function BaseInteractionExt:interact_distance()
@@ -611,122 +448,105 @@ toggle_increased_interact_distance = toggle_increased_interact_distance or funct
                 "stn_int_place_camera" or self.tweak_data == "trip_mine" then
                 return self._tweak_data.interact_distance or tweak_data.interaction.INTERACT_DISTANCE
             end
+
             return 1000
         end
+
         managers.mission._fading_debug_output:script().log('Increased Interact Distance - Activated', Color.green)
     else
         function BaseInteractionExt:interact_distance()
-            if self.tweak_data == "access_camera" or self.tweak_data == "shaped_sharge" or tostring(self._unit:name()) ==
-                "Idstring(@ID14f05c3d9ebb44b6@)" or self.tweak_data == "burning_money" or self.tweak_data ==
-                "stn_int_place_camera" or self.tweak_data == "trip_mine" then
-                return self._tweak_data.interact_distance or tweak_data.interaction.INTERACT_DISTANCE
-            end
-            return 200
+            BaseInteractionExt_interact_distance(self)
         end
+
         managers.mission._fading_debug_output:script().log('Increased Interact Distance - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_faster_ziplines = toggle_faster_ziplines or function(info)
     toggleFasterZiplines = not toggleFasterZiplines
 
+    local ZipLine_update = ZipLine.update
+
     if toggleFasterZiplines then
-        function ZipLine:update(unit, t, dt)
+        function ZipLine:update(unit, t, dt, ...)
             if not self._enabled then
                 return
             end
+
             if self._usage_type == "bag" then
                 self._speed = 10000
             elseif self._usage_type == "person" then
                 self._speed = 10000
             end
+
             self:_update_total_time()
             self:_update_sled(t, dt)
             self:_update_sounds(t, dt)
+
             if ZipLine.DEBUG then
                 self:debug_draw(t, dt)
             end
         end
+
         managers.mission._fading_debug_output:script().log('Faster Ziplines - Activated', Color.green)
     else
-        function ZipLine:update(unit, t, dt)
-            if not self._enabled then
-                return
-            end
-            if self._usage_type == "bag" then
-                self._speed = 1000
-            elseif self._usage_type == "person" then
-                self._speed = 1000
-            end
-            self:_update_total_time()
-            self:_update_sled(t, dt)
-            self:_update_sounds(t, dt)
-            if ZipLine.DEBUG then
-                self:debug_draw(t, dt)
-            end
+        function ZipLine:update(...)
+            ZipLine_update(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Faster Ziplines - Deactivated', Color.red)
-
     end
-
 end
 
 toggle_faster_drills = toggle_faster_drills or function(info)
     toggleFasterDrills = not toggleFasterDrills
 
+    local TimerGui_start = TimerGui._start
+    local ZipLine_set_jamming_values = ZipLine._set_jamming_values
+
     if toggleFasterDrills then
-        local old_start = TimerGui._start
         function TimerGui:_set_jamming_values()
             return
         end
-        function TimerGui:start(timer)
+
+        function TimerGui:start(timer, ...)
             timer = 0.01
+
             if self._jammed then
                 self:_set_jammed(false)
+
                 return
             end
+
             if not self._powered then
                 self:_set_powered(true)
+
                 return
             end
+
             if self._started then
                 return
             end
+
             self:_start(timer)
+
             if managers.network:session() then
                 managers.network:session():send_to_peers_synched("start_timer_gui", self._unit, timer)
             end
         end
+
         managers.mission._fading_debug_output:script().log('Faster Drills - Activated', Color.green)
     else
-        local old_start = TimerGui._start
         function TimerGui:_set_jamming_values()
-            return
+            ZipLine_set_jamming_values(self)
         end
-        function TimerGui:start(timer)
-            timer = old_start
-            if self._jammed then
-                self:_set_jammed(false)
-                return
-            end
-            if not self._powered then
-                self:_set_powered(true)
-                return
-            end
-            if self._started then
-                return
-            end
-            self:_start(timer)
-            if managers.network:session() then
-                managers.network:session():send_to_peers_synched("start_timer_gui", self._unit, timer)
-            end
+
+        function TimerGui:start(...)
+            TimerGui_start(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Faster Drills - Deactivated', Color.red)
-
     end
-
 end
 
 player_interact_with_anything = player_interact_with_anything or function(info)
@@ -739,19 +559,18 @@ player_interact_with_anything = player_interact_with_anything or function(info)
         return true
     end
 
-    function BaseInteractionExt:can_interact(player)
+    function BaseInteractionExt:can_interact(...)
         return true
     end
 
     managers.mission._fading_debug_output:script().log('Interact With Anything - Activated', Color.green)
-
 end
 
 interact_while_in_casing = interact_while_in_casing or function(info)
-    local old_is_in = old_is_in or BaseInteractionExt._is_in_required_state
+    local BaseInteractionExt_is_in_required_state =  BaseInteractionExt._is_in_required_state
 
-    function BaseInteractionExt:_is_in_required_state(movement_state)
-        return movement_state == "mask_off" and true or old_is_in(self, movement_state)
+    function BaseInteractionExt:_is_in_required_state(movement_state, ...)
+        return movement_state == "mask_off" and true or BaseInteractionExt_is_in_required_state(self, movement_state, ...)
     end
 
     managers.mission._fading_debug_output:script().log('Interact While In Casing Mode - Activated', Color.green)
@@ -774,7 +593,7 @@ end
 
 interact_through_walls = interact_through_walls or function(info)
 
-    function ObjectInteractionManager:_raycheck_ok(unit, camera_pos, locator)
+    function ObjectInteractionManager:_raycheck_ok(...)
         return true
     end
 
@@ -801,35 +620,29 @@ end
 toggle_instant_interactions = toggle_instant_interactions or function(info)
     toggleInstantInteractions = not toggleInstantInteractions
 
+    local BaseInteractionExt_get_timer = BaseInteractionExt._get_timer
+
     if toggleInstantInteractions then
         local arr = {"driving_drive", "corpse_alarm_pager"}
-
-        if not _getTimer then
-            _getTimer = BaseInteractionExt._get_timer
-        end
 
         function BaseInteractionExt:_get_timer()
             for _, item in pairs(arr) do
                 if self.tweak_data == item then
-                    return _getTimer(self)
+                    return BaseInteractionExt_get_timer(self)
                 end
             end
+
             return 0
         end
 
         managers.mission._fading_debug_output:script().log('Instant Interactions - Activated', Color.green)
     else
-        if not _getTimer then
-            _getTimer = BaseInteractionExt._get_timer
-        end
-
         function BaseInteractionExt:_get_timer()
-            return _getTimer(self)
+            return original_get_timer(self)
         end
 
         managers.mission._fading_debug_output:script().log('Instant Interactions - Deactivated', Color.red)
     end
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                             Player Movement Options                                                                               --
@@ -837,108 +650,68 @@ end
 toggle_jump_higher = toggle_jump_higher or function(info)
     toggleJumpHigher = not toggleJumpHigher
 
+    local PlayerStandard_perform_jump = PlayerStandard._perform_jump
+
     if toggleJumpHigher then
-        function PlayerStandard:_perform_jump(jump_vec)
+        function PlayerStandard:_perform_jump(jump_vec, ...)
             local v = math.UP * 470
+
             if not self._running then
                 v = math.UP * 470 * 5
             end
+
             self._unit:mover():set_velocity(v)
         end
+
         managers.mission._fading_debug_output:script().log('Jump Higher - Activated', Color.green)
     else
-        function PlayerStandard:_perform_jump(jump_vec)
-            local v = math.UP * 470
-            if not self._running then
-                v = math.UP * 470 * 1
-            end
-            self._unit:mover():set_velocity(v)
+        function PlayerStandard:_perform_jump(...)
+            PlayerStandard_perform_jump(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Jump Higher - Deactivated', Color.red)
     end
-
 end
 
 toggle_remove_carry_penalty = toggle_remove_carry_penalty or function(info)
     toggleRemoveCarryPenalty = not toggleRemoveCarryPenalty
 
     if toggleRemoveCarryPenalty then
-        local car_arr1 = {'being', 'mega_heavy', 'heavy', 'medium', 'light', 'coke_light'}
+        local carry_data = {'being', 'mega_heavy', 'heavy', 'medium', 'light', 'coke_light'}
 
-        for i, name in pairs(car_arr1) do
+        for _, name in ipairs(carry_data) do
             tweak_data.carry.types[name].throw_distance_multiplier = 1
             tweak_data.carry.types[name].move_speed_modifier = 1
             tweak_data.carry.types[name].jump_modifier = 1
             tweak_data.carry.types[name].can_run = true
         end
 
-        managers.mission._fading_debug_output:script().log('Remove Speed Penalty While Carrying Bags - Activated',
-            Color.green)
+        managers.mission._fading_debug_output:script().log('Remove Speed Penalty While Carrying Bags - Activated', Color.green)
     else
-        local car_arr2 = {'being'}
+        local carry_data = {
+            { name = 'being', throw = 0.5, move_speed = 0.5, jump = 0.5, can_run = false },
+            { name = 'mega_heavy', throw = 0.5, move_speed = 0.5, jump = 0.5, can_run = false },
+            { name = 'heavy', throw = 0.8, move_speed = 0.75, jump = 1, can_run = false },
+            { name = 'medium', throw = 1, move_speed = 0.6, jump = 1, can_run = false },
+            { name = 'light', throw = 1, move_speed = 1, jump = 1, can_run = true },
+            { name = 'coke_light', throw = 1, move_speed = 1, jump = 1, can_run = true }
+        }
+        
+        for _, data in ipairs(carry_data) do
+            local name = data.name
+            tweak_data.carry.types[name].throw_distance_multiplier = data.throw
+            tweak_data.carry.types[name].move_speed_modifier = data.move_speed
+            tweak_data.carry.types[name].jump_modifier = data.jump
+            tweak_data.carry.types[name].can_run = data.can_run
+        end        
 
-        for i, name in ipairs(car_arr2) do
-            tweak_data.carry.types[name].throw_distance_multiplier = 0.5
-            tweak_data.carry.types[name].move_speed_modifier = 0.5
-            tweak_data.carry.types[name].jump_modifier = 0.5
-            tweak_data.carry.types[name].can_run = false
-        end
-
-        local car_arr3 = {'mega_heavy'}
-
-        for i, name in ipairs(car_arr3) do
-            tweak_data.carry.types[name].throw_distance_multiplier = 0.5
-            tweak_data.carry.types[name].move_speed_modifier = 0.5
-            tweak_data.carry.types[name].jump_modifier = 0.5
-            tweak_data.carry.types[name].can_run = false
-        end
-
-        local car_arr4 = {'heavy'}
-
-        for i, name in ipairs(car_arr4) do
-            tweak_data.carry.types[name].throw_distance_multiplier = 0.8
-            tweak_data.carry.types[name].move_speed_modifier = 0.75
-            tweak_data.carry.types[name].jump_modifier = 1
-            tweak_data.carry.types[name].can_run = false
-        end
-
-        local car_arr5 = {'medium'}
-
-        for i, name in ipairs(car_arr5) do
-            tweak_data.carry.types[name].throw_distance_multiplier = 1
-            tweak_data.carry.types[name].move_speed_modifier = 0.6
-            tweak_data.carry.types[name].jump_modifier = 1
-            tweak_data.carry.types[name].can_run = false
-        end
-
-        local car_arr6 = {'light'}
-
-        for i, name in ipairs(car_arr6) do
-            tweak_data.carry.types[name].throw_distance_multiplier = 1
-            tweak_data.carry.types[name].move_speed_modifier = 1
-            tweak_data.carry.types[name].jump_modifier = 1
-            tweak_data.carry.types[name].can_run = true
-        end
-
-        local car_arr7 = {'coke_light'}
-
-        for i, name in ipairs(car_arr7) do
-            tweak_data.carry.types[name].throw_distance_multiplier = 1
-            tweak_data.carry.types[name].move_speed_modifier = 1
-            tweak_data.carry.types[name].jump_modifier = 1
-            tweak_data.carry.types[name].can_run = true
-        end
-
-        managers.mission._fading_debug_output:script().log('Remove Speed Penalty While Carrying Bags - Deactivated',
-            Color.red)
+        managers.mission._fading_debug_output:script().log('Remove Speed Penalty While Carrying Bags - Deactivated', Color.red)
     end
-
 end
 
 infinite_stamina = infinite_stamina or function(info)
 
-    function PlayerMovement:_change_stamina(value)
-    end
+    function PlayerMovement:_change_stamina(...) end
 
     function PlayerMovement:is_stamina_drained()
         return false
@@ -949,7 +722,6 @@ infinite_stamina = infinite_stamina or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Infinite Stamina - Activated', Color.green)
-
 end
 
 toggle_run_faster = toggle_run_faster or function(info)
@@ -957,12 +729,13 @@ toggle_run_faster = toggle_run_faster or function(info)
 
     if toggleRunFaster then
         tweak_data.player.movement_state.standard.movement.multiplier.run = 5
+
         managers.mission._fading_debug_output:script().log('Run Faster - Activated', Color.green)
     else
         tweak_data.player.movement_state.standard.movement.multiplier.run = 1
+
         managers.mission._fading_debug_output:script().log('Run Faster - Deactivated', Color.red)
     end
-
 end
 
 toggle_walk_faster = toggle_walk_faster or function(info)
@@ -970,12 +743,13 @@ toggle_walk_faster = toggle_walk_faster or function(info)
 
     if toggleWalkFaster then
         tweak_data.player.movement_state.standard.movement.multiplier.walk = 5
+
         managers.mission._fading_debug_output:script().log('Walk Faster - Activated', Color.green)
     else
         tweak_data.player.movement_state.standard.movement.multiplier.walk = 1
+
         managers.mission._fading_debug_output:script().log('Walk Faster - Deactivated', Color.red)
     end
-
 end
 
 toggle_climb_faster = toggle_climb_faster or function(info)
@@ -983,12 +757,13 @@ toggle_climb_faster = toggle_climb_faster or function(info)
 
     if toggleClimbFaster then
         tweak_data.player.movement_state.standard.movement.multiplier.climb = 5
+
         managers.mission._fading_debug_output:script().log('Climb Faster - Activated', Color.green)
     else
         tweak_data.player.movement_state.standard.movement.multiplier.climb = 1
+
         managers.mission._fading_debug_output:script().log('Climb Faster - Deactivated', Color.red)
     end
-
 end
 
 remove_speed_penalty = remove_speed_penalty or function(info)
@@ -998,7 +773,6 @@ remove_speed_penalty = remove_speed_penalty or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Body Armor Speed Penalty - Activated', Color.green)
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                               Player Weapon Options                                                                               --
@@ -1010,14 +784,15 @@ toggle_remove_weapon_recoil = toggle_remove_weapon_recoil or function(info)
         function NewRaycastWeaponBase:recoil_multiplier()
             return 0
         end
+
         managers.mission._fading_debug_output:script().log('Remove Weapon Recoil - Activated', Color.green)
     else
         function NewRaycastWeaponBase:recoil_multiplier()
             return 1
         end
+
         managers.mission._fading_debug_output:script().log('Remove Weapon Recoil - Deactivated', Color.red)
     end
-
 end
 
 toggle_increased_weapon_reload_speed = toggle_increased_weapon_reload_speed or function(info)
@@ -1027,14 +802,15 @@ toggle_increased_weapon_reload_speed = toggle_increased_weapon_reload_speed or f
         function NewRaycastWeaponBase:reload_speed_multiplier()
             return 1000
         end
+
         managers.mission._fading_debug_output:script().log('Instant Weapon Reload Speed - Activated', Color.green)
     else
         function NewRaycastWeaponBase:reload_speed_multiplier()
             return 1
         end
+
         managers.mission._fading_debug_output:script().log('Instant Weapon Reload Speed - Deactivated', Color.red)
     end
-
 end
 
 toggle_increased_weapon_fire_rate = toggle_increased_weapon_fire_rate or function(info)
@@ -1044,14 +820,15 @@ toggle_increased_weapon_fire_rate = toggle_increased_weapon_fire_rate or functio
         function NewRaycastWeaponBase:fire_rate_multiplier()
             return 100
         end
+
         managers.mission._fading_debug_output:script().log('Extreme Weapon Fire Rate - Activated', Color.green)
     else
         function NewRaycastWeaponBase:fire_rate_multiplier()
             return 1
         end
+
         managers.mission._fading_debug_output:script().log('Extreme Weapon Fire Rate - Deactivated', Color.red)
     end
-
 end
 
 toggle_increased_weapon_swap_speed = toggle_increased_weapon_swap_speed or function(info)
@@ -1061,14 +838,15 @@ toggle_increased_weapon_swap_speed = toggle_increased_weapon_swap_speed or funct
         function PlayerStandard:_get_swap_speed_multiplier()
             return 100
         end
+
         managers.mission._fading_debug_output:script().log('Instant Weapon Swap Speed - Activated', Color.green)
     else
         function PlayerStandard:_get_swap_speed_multiplier()
             return 1
         end
+
         managers.mission._fading_debug_output:script().log('Instant Weapon Swap Speed - Deactivated', Color.red)
     end
-
 end
 
 remove_spread = remove_spread or function(info)
@@ -1078,7 +856,6 @@ remove_spread = remove_spread or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Bullets Spread - Activated', Color.green)
-
 end
 
 one_shot_kill = one_shot_kill or function(info)
@@ -1088,12 +865,11 @@ one_shot_kill = one_shot_kill or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('One Shot Kill - Activated', Color.green)
-
 end
 
 melee_tweaks = melee_tweaks or function(info)
 
-    for _, wep in pairs(tweak_data.blackmarket.melee_weapons) do
+    for _, wep in ipairs(tweak_data.blackmarket.melee_weapons) do
         if wep then
             wep.expire_t = 0.1
             wep.charge_time = 0.1
@@ -1101,46 +877,42 @@ melee_tweaks = melee_tweaks or function(info)
         end
     end
 
-    local damage_melee_original = CopDamage.damage_melee
+    local CopDamage_damage_melee = CopDamage.damage_melee
 
     function CopDamage:damage_melee(attack_data, ...)
         attack_data.damage = attack_data.damage * 5000
-        return damage_melee_original(self, attack_data, ...)
+        return CopDamage_damage_melee(self, attack_data, ...)
     end
 
-    local super_damage_melee = TankCopDamage.super.damage_melee
+    local TankCopDamage_super_damage_melee = TankCopDamage.super.damage_melee
 
     function TankCopDamage.damage_melee(...)
-        return super_damage_melee(...)
+        return TankCopDamage_damage_melee(self, ...)
     end
 
-    local super_damage_melee = HuskTankCopDamage.super.damage_melee
+    local HuskTankCopDamage_super_damage_melee = HuskTankCopDamage.super.damage_melee
 
     function HuskTankCopDamage.damage_melee(...)
-        return super_damage_melee(...)
+        return HuskTankCopDamage_damage_melee(self, ...)
     end
 
     managers.mission._fading_debug_output:script().log('Melee Tweaks - Activated', Color.green)
-
 end
 
 infinite_ammo = infinite_ammo or function(info)
-    if not _fireWep then
-        _fireWep = NewRaycastWeaponBase.fire
-    end
+    local NewRaycastWeaponBase_fire = NewRaycastWeaponBase.fire
 
-    function NewRaycastWeaponBase:fire(from_pos, direction, dmg_mul, shoot_player, spread_mul, autohit_mul, suppr_mul,
-        target_unit)
-        local result = _fireWep(self, from_pos, direction, dmg_mul, shoot_player, spread_mul, autohit_mul, suppr_mul,
-            target_unit)
+    function NewRaycastWeaponBase:fire(from_pos, direction, dmg_mul, shoot_player, spread_mul, autohit_mul, suppr_mul, target_unit)
+        local result = NewRaycastWeaponBase_fire(self, from_pos, direction, dmg_mul, shoot_player, spread_mul, autohit_mul, suppr_mul, target_unit)
+
         if managers.player:player_unit() == self._setup.user_unit then
             self.set_ammo(self, 1.0)
         end
+
         return result
     end
 
     managers.mission._fading_debug_output:script().log('Infinite Ammo Without Reload - Activated', Color.green)
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                 Heist Options                                                                                     --
@@ -1156,31 +928,28 @@ remove_cash_penalty = remove_cash_penalty or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Cash Penalty For Killing Civilians - Activated', Color.green)
-
 end
 
 remove_alarm_laser = remove_alarm_laser or function(info)
 
-    function ElementLaserTrigger:on_executed(instigator, alternative)
-    end
+    function ElementLaserTrigger:on_executed(...) end
 
     managers.mission._fading_debug_output:script().log('Remove All Static Alarm Lasers - Activated', Color.green)
-
 end
 
 remove_pagers = remove_pagers or function(info)
-    local old_post_init = CopBrain.post_init
-    local array = {"security", "city_swat", "gensec", "bolivian", "bolivian_indoors"}
+    local CopBrain_post_init = CopBrain.post_init
+    local cop_data = {"security", "city_swat", "gensec", "bolivian", "bolivian_indoors"}
 
     function CopBrain:post_init(...)
-        old_post_init(self, ...)
-        for k, v in pairs(array) do
+        CopBrain_post_init(self, ...)
+
+        for k, v in pairs(cop_data) do
             self._unit:unit_data().has_alarm_pager = false
         end
     end
 
     managers.mission._fading_debug_output:script().log('Remove Pagers - Activated', Color.green)
-
 end
 
 kill_all_enemies = kill_all_enemies or function(info)
@@ -1212,7 +981,6 @@ kill_all_enemies = kill_all_enemies or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Kill All Enemies On The Map - Activated', Color.green)
-
 end
 
 tie_all_civilians = tie_all_civilians or function(info)
@@ -1221,13 +989,14 @@ tie_all_civilians = tie_all_civilians or function(info)
     local M_enemy = managers.enemy
     local HUGE = math.huge
     local pairs = pairs
+    local player = M_player:player_unit()
+    local all_civilians = M_enemy:all_civilians()
 
-    function tieall()
-        local player = M_player:player_unit()
-        local all_civilians = M_enemy:all_civilians()
+    local function tie_all()
         for u_key, u_data in pairs(all_civilians) do
             local unit = u_data.unit
             local brain = unit:brain()
+
             if not brain:is_tied() then
                 local action_data = {
                     type = "act",
@@ -1235,6 +1004,7 @@ tie_all_civilians = tie_all_civilians or function(info)
                     clamp_to_graph = true,
                     variant = "halt"
                 }
+
                 brain:action_request(action_data)
                 brain._current_logic.on_intimidated(brain._logic_data, HUGE, player, true)
                 brain:on_tied(player)
@@ -1242,40 +1012,42 @@ tie_all_civilians = tie_all_civilians or function(info)
         end
     end
 
-    tieall()
+    tie_all()
 
     managers.mission._fading_debug_output:script().log('Tie All Civilians On The Map - Activated', Color.green)
-
 end
 
 convert_all_enemies = convert_all_enemies or function(info)
     local AI_State = managers.groupai:state()
     local convert_hostage_to_criminal = AI_State.convert_hostage_to_criminal
+    local all_enemies = managers.enemy:all_enemies()
 
-    function convertall()
-        local all_enemies = managers.enemy:all_enemies()
+    local function convert_all()
         for _, ud in pairs(all_enemies) do
             local unit = ud.unit
+
             if not unit:brain()._logic_data.is_converted then
                 pcall(convert_hostage_to_criminal, AI_State, unit)
             end
         end
     end
 
-    convertall()
+    convert_all()
 
     managers.mission._fading_debug_output:script().log('Convert All Enemies On The Map - Activated', Color.green)
-
 end
 
 auto_pickup = auto_pickup or function(info)
     ObjectInteractionManager.AUTO_PICKUP_DELAY = 0.01
-    local _update_targeted_original = ObjectInteractionManager._update_targeted
+
+    local ObjectInteractionManager_update_targeted = ObjectInteractionManager._update_targeted
 
     function ObjectInteractionManager:_update_targeted(...)
-        _update_targeted_original(self, ...)
+        ObjectInteractionManager_update_targeted(self, ...)
+
         if alive(self._active_unit) then
             local t = Application:time()
+
             if self._active_unit:base() and self._active_unit:base().small_loot and
                 (t >= (self._next_auto_pickup_t or 0)) then
                 self._next_auto_pickup_t = t + ObjectInteractionManager.AUTO_PICKUP_DELAY
@@ -1285,16 +1057,17 @@ auto_pickup = auto_pickup or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Auto Pick Up - Activated', Color.green)
-
 end
 
 carry_stacker = carry_stacker or function(info)
     if not CarryStackerSetupDone then
         CarryStackerSetupDone = true
+
         if managers and managers.player and IntimitateInteractionExt and CarryInteractionExt then
             managers.player.carry_stack = {}
             managers.player.carrystack_lastpress = 0
             managers.player.drop_all_bags = false
+
             ofuncs = {
                 managers_player_set_carry = managers.player.set_carry,
                 managers_player_drop_carry = managers.player.drop_carry,
@@ -1303,7 +1076,9 @@ carry_stacker = carry_stacker or function(info)
 
             function managers.player:refresh_stack_counter()
                 local count = #self.carry_stack + (self:is_carrying() and 1 or 0)
+
                 managers.hud:remove_special_equipment("carrystacker")
+
                 if count > 0 then
                     managers.hud:add_special_equipment({
                         id = "carrystacker",
@@ -1317,56 +1092,69 @@ carry_stacker = carry_stacker or function(info)
                 if #managers.player.carry_stack < 1 or (#managers.player.carry_stack < 2 and not self:is_carrying()) then
                     return
                 end
+
                 if self:is_carrying() then
                     table.insert(self.carry_stack, self:get_my_carry_data())
                 end
+
                 if dir == "up" then
                     table.insert(self.carry_stack, 1, table.remove(self.carry_stack))
                 else
                     table.insert(self.carry_stack, table.remove(self.carry_stack, 1))
                 end
+
                 local cdata = table.remove(self.carry_stack)
+
                 if cdata then
                     if self:is_carrying() then
                         self:carry_discard()
                     end
-                    ofuncs.managers_player_set_carry(self, cdata.carry_id, cdata.multiplier, cdata.dye_initiated,
-                        cdata.has_dye_pack, cdata.dye_value_multiplier, cdata.zipline_unit)
+
+                    ofuncs.managers_player_set_carry(self, cdata.carry_id, cdata.multiplier, cdata.dye_initiated, cdata.has_dye_pack, cdata.dye_value_multiplier, cdata.zipline_unit)
                 end
             end
 
             function managers.player:drop_carry(zipline_unit)
                 ofuncs.managers_player_drop_carry(self, zipline_unit)
+
                 if #self.carry_stack > 0 then
                     local cdata = table.remove(self.carry_stack)
+
                     if cdata then
                         self:set_carry(cdata.carry_id, cdata.multiplier or 1, cdata.dye_initiated, cdata.has_dye_pack,
                             cdata.dye_value_multiplier, cdata.zipline_unit)
                     end
                 end
+
                 self:refresh_stack_counter()
+
                 if self.drop_all_bags then
                     if #self.carry_stack > 0 or self:is_carrying() then
                         self:drop_carry()
                     end
+
                     self.drop_all_bags = false
                 end
             end
 
             function managers.player:set_carry(carry_id, carry_multiplier, dye_initiated, has_dye_pack,
                 dye_value_multiplier, zipline_unit)
+
                 if self:is_carrying() and self:get_my_carry_data() then
                     table.insert(self.carry_stack, self:get_my_carry_data())
                 end
-                ofuncs.managers_player_set_carry(self, carry_id, carry_multiplier, dye_initiated, has_dye_pack,
-                    dye_value_multiplier, zipline_unit)
+
+                ofuncs.managers_player_set_carry(self, carry_id, carry_multiplier, dye_initiated, has_dye_pack, dye_value_multiplier, zipline_unit)
+
                 self:refresh_stack_counter()
             end
 
             function managers.player:carry_discard()
                 managers.hud:remove_teammate_carry_info(HUDManager.PLAYER_PANEL)
                 managers.hud:temp_hide_carry_bag()
+
                 self:update_removed_synced_carry_to_peers()
+
                 if self._current_state == "carry" then
                     managers.player:set_player_state("standard")
                 end
@@ -1377,8 +1165,10 @@ carry_stacker = carry_stacker or function(info)
                     if not managers.player:has_category_upgrade("player", "corpse_dispose") then
                         return true
                     end
+
                     return not managers.player:can_carry("person")
                 end
+
                 return ofuncs.IntimitateInteractionExt__interact_blocked(self, player)
             end
 
@@ -1393,16 +1183,21 @@ carry_stacker = carry_stacker or function(info)
             function managers.player:carry_stacker()
                 if _debugEnabled then
                     io.stderr:write("current stack size: " .. tostring(#managers.player.carry_stack) .. "\n")
+
                     if #managers.player.carry_stack > 0 then
                         for _, v in pairs(managers.player.carry_stack) do
                             io.stderr:write("item: " .. v.carry_id .. "\n")
                         end
                     end
                 end
+
                 local cdata = self:get_my_carry_data()
+                
                 if self:is_carrying() and cdata then
                     table.insert(self.carry_stack, self:get_my_carry_data())
+
                     self:carry_discard()
+
                     managers.hud:present_mid_text({
                         title = "Carry Stack",
                         text = cdata.carry_id .. " Pushed",
@@ -1410,8 +1205,9 @@ carry_stacker = carry_stacker or function(info)
                     })
                 elseif #self.carry_stack > 0 then
                     cdata = table.remove(self.carry_stack)
-                    self:set_carry(cdata.carry_id, cdata.multiplier, cdata.dye_initiated, cdata.has_dye_pack,
-                        cdata.dye_value_multiplier, cdata.zipline_unit)
+
+                    self:set_carry(cdata.carry_id, cdata.multiplier, cdata.dye_initiated, cdata.has_dye_pack, cdata.dye_value_multiplier, cdata.zipline_unit)
+
                     managers.hud:present_mid_text({
                         title = "Carry Stack",
                         text = cdata.carry_id .. " Popped",
@@ -1426,10 +1222,13 @@ carry_stacker = carry_stacker or function(info)
                 end
                 if (Application:time() - self.carrystack_lastpress) < 0.3 and
                     (self:is_carrying() or #self.carry_stack > 0) then
+
                     self.drop_all_bags = true
+
                     self:drop_carry()
                 end
                 self.carrystack_lastpress = Application:time()
+
                 self:refresh_stack_counter()
             end
 
@@ -1438,7 +1237,6 @@ carry_stacker = carry_stacker or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Carry Stacker - Activated', Color.green)
-
 end
 
 force_win = force_win or function(info)
@@ -1464,6 +1262,7 @@ force_win = force_win or function(info)
         local best_bag = ''
         local A = Application
         local digest_value = digest_value
+
         for name, val in pairs(T_M_bag_values) do
             val = digest_value(A, val, false)
             if (val > best_val) then
@@ -1471,19 +1270,24 @@ force_win = force_win or function(info)
                 best_bag = name
             end
         end
+
         if (best_bag == '') then
             best_bag = 'hope_diamond'
         end
+
         BEST_BAG = best_bag
+
         return best_bag
     end
 
     local secure_rupies = function()
         local level = G_game_settings.level_id
+
         if (level) then
             local bag_limit = T_levels[level].max_bags or 20
             local best_bag = BEST_BAG or get_the_most_expensive_bag()
             local secure = M_loot.secure
+
             for i = get_secured_bonus_bags_amount(M_loot) + 1, bag_limit do
                 secure(M_loot, best_bag, 1, true)
             end
@@ -1502,7 +1306,9 @@ force_win = force_win or function(info)
         add_some_cash()
 
         local num_winners = M_network:session():amount_of_alive_players()
+
         M_network._session:send_to_peers("mission_ended", true, num_winners)
+
         game_state_machine:change_state_by_name("victoryscreen", {
             num_winners = num_winners,
             personal_win = true
@@ -1512,11 +1318,11 @@ force_win = force_win or function(info)
     you_winner()
 
     managers.mission._fading_debug_output:script().log('Force Win - Activated', Color.green)
-
 end
 
 remove_invisible_walls = remove_invisible_walls or function(info)
     local net_session = managers.network:session()
+
     if net_session then
         local CollisionData = {
             ["276de19dc5541f30"] = true,
@@ -1591,7 +1397,6 @@ remove_invisible_walls = remove_invisible_walls or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Invisible Walls - Activated', Color.green)
-
 end
 
 remote_camera = remote_camera or function(info)
@@ -1599,16 +1404,15 @@ remote_camera = remote_camera or function(info)
     local change_state_by_name = game_state_machine.change_state_by_name
     local can_change_state_by_name = game_state_machine.can_change_state_by_name
 
-    local function remote_camera()
+    local function remoteCamera()
         if (can_change_state_by_name(game_state_machine, "ingame_access_camera")) then
             change_state_by_name(game_state_machine, "ingame_access_camera")
         end
     end
 
-    remote_camera()
+    remoteCamera()
 
     managers.mission._fading_debug_output:script().log('Remote Camera Access - Activated', Color.green)
-
 end
 
 toggle_xray = toggle_xray or function(info)
@@ -1683,22 +1487,29 @@ toggle_xray = toggle_xray or function(info)
         if not (unit:contour() and alive(unit) and unit:base()) then
             return
         end
+
         local unitType = unit:base()._tweak_table
+
         if unit:base().security_camera then
             unitType = 'camera'
         end
+
         if unit:base().is_converted then
             unitType = 'friendly'
         end
+
         if unit:base().is_hostage then
             unitType = 'hostage'
         end
+
         if unit:base().has_pickup then
             unitType = 'pickup'
         end
+
         if not unitType then
             return nil
         end
+
         return Color(ColorList[unitType] and ColorList[unitType] or ColorList['default'])
     end
 
@@ -1706,12 +1517,15 @@ toggle_xray = toggle_xray or function(info)
         if not toggleMark or not inGame() then
             return
         end
+
         local multi = managers.player:upgrade_value("player", "mark_enemy_time_multiplier", 1)
+
         for u_key, u_data in pairs(managers.groupai:state()._security_cameras) do
             if u_data.contour then
                 u_data:contour():add("mark_unit", syncMark, multi)
             end
         end
+
         for u_key, u_data in pairs(managers.enemy:all_civilians()) do
             if u_data.unit.contour and alive(u_data.unit) then
                 if isHostage(u_data.unit) then
@@ -1719,22 +1533,27 @@ toggle_xray = toggle_xray or function(info)
                         is_hostage = true
                     })
                 end
+
                 if isHost() and u_data.unit:character_damage():pickup() then
                     u_data.unit:contour():setData({
                         has_pickup = true
                     })
                 end
+
                 u_data.unit:contour():add("mark_enemy", syncMark, multi)
             end
         end
+
         for u_key, u_data in pairs(managers.enemy:all_enemies()) do
             if u_data.unit.contour and alive(u_data.unit) then
                 if u_data.is_converted then
                     ContourExt._types.friendly.fadeout = 4.5
                     ContourExt._types.friendly.fadeout_silent = 13.5
+
                     u_data.unit:contour():setData({
                         is_converted = true
                     })
+
                     u_data.unit:contour():add("friendly", syncMark, multi)
                 else
                     if isHostage(u_data.unit) then
@@ -1742,6 +1561,7 @@ toggle_xray = toggle_xray or function(info)
                             is_hostage = true
                         })
                     end
+
                     u_data.unit:contour():add("mark_enemy", syncMark, multi)
                 end
             end
@@ -1751,8 +1571,10 @@ toggle_xray = toggle_xray or function(info)
     function isHostage(unit)
         if unit and alive(unit) and ((unit.brain and unit:brain().is_hostage and unit:brain():is_hostage()) or
             (unit.anim_data and (unit:anim_data().tied or unit:anim_data().hands_tied))) then
+
             return true
         end
+
         return false
     end
 
@@ -1760,6 +1582,7 @@ toggle_xray = toggle_xray or function(info)
         if not Network then
             return false
         end
+
         return not Network:is_client()
     end
 
@@ -1767,6 +1590,7 @@ toggle_xray = toggle_xray or function(info)
         if not game_state_machine then
             return false
         end
+
         return string.find(game_state_machine:current_state_name(), "game")
     end
 
@@ -1778,16 +1602,19 @@ toggle_xray = toggle_xray or function(info)
         if not inGame() then
             return
         end
+
         for u_key, u_data in pairs(managers.groupai:state()._security_cameras) do
             if u_data.contour then
                 u_data:contour():removeAll()
             end
         end
+
         for u_key, u_data in pairs(managers.enemy:all_civilians()) do
             if u_data.unit.contour then
                 u_data.unit:contour():removeAll()
             end
         end
+
         for u_key, u_data in pairs(managers.enemy:all_enemies()) do
             if u_data.unit.contour then
                 u_data.unit:contour():removeAll()
@@ -1796,30 +1623,31 @@ toggle_xray = toggle_xray or function(info)
     end
 
     if ContourExt then
-        if not _nhUpdateColor then
-            _nhUpdateColor = ContourExt._upd_color
-        end
+        local ContourExt_upd_color = ContourExt._upd_color
 
         function ContourExt:_upd_color()
             if toggleMark then
                 if self._unit:name() ~= Idstring("units/pickups/ammo/ammo_pickup") then
                     local color = getUnitColor(self._unit)
+
                     if color then
                         self._materials = self._materials or self._unit:get_objects_by_type(Idstring("material"))
                         for _, material in ipairs(self._materials) do
                             material:set_variable(Idstring("contour_color"), color)
                         end
+
                         return
                     end
                 end
             end
-            _nhUpdateColor(self)
+            ContourExt_upd_color(self)
         end
 
         function ContourExt:removeAll(sync)
             if not self._contour_list or not type(self._contour_list) == 'table' then
                 return
             end
+
             for id, setup in ipairs(self._contour_list) do
                 self:remove(setup.type, sync)
             end
@@ -1829,41 +1657,42 @@ toggle_xray = toggle_xray or function(info)
             if not data or not type(data) == 'table' then
                 return
             end
+
             for k, v in pairs(data) do
                 self._unit:base()[k] = v
             end
         end
-
     end
 
-    function UnitNetworkHandler:mark_enemy(unit, marking_strength, sender)
-    end
+    function UnitNetworkHandler:mark_enemy(unit, marking_strength, sender) end
 
     if GameSetup then
-        if not _gameUpdate then
-            _gameUpdate = GameSetup.update
-        end
+        GameSetup_update = GameSetup.update
+        
         local _gameUpdateLastMark
 
         function GameSetup:update(t, dt)
-            _gameUpdate(self, t, dt)
+            GameSetup_update(self, t, dt)
+
             if not _gameUpdateLastMark or t - _gameUpdateLastMark > 4 then
                 _gameUpdateLastMark = t
+
                 markData()
             end
         end
-
     end
 
     function markToggle(toggleSync)
         if not inGame() then
             return
         end
+
         if toggleSync then
             syncMark = not syncMark
         else
             toggleMark = not toggleMark
         end
+
         markData()
     end
 
@@ -1882,123 +1711,87 @@ toggle_xray = toggle_xray or function(info)
     else
         managers.mission._fading_debug_output:script().log('Xray - Deactivated', Color.red)
     end
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                              Player Equipment Options                                                                             --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 toggle_infinite_equipment = toggle_infinite_equipment or function(info)
-    toggleInfiniteCableTies = not toggleInfiniteCableTies
+    toggleInfiniteEquipment = not toggleInfiniteEquipment
 
-    if toggleInfiniteCableTies then
-        function PlayerManager:remove_equipment(equipment_id)
-        end
+    local PlayerManager_remove_equipment = PlayerManager.remove_equipment
+
+    if toggleInfiniteEquipment then
+        function PlayerManager:remove_equipment(...) end
+
         managers.mission._fading_debug_output:script().log('Infinite Equipment - Activated', Color.green)
     else
-        function PlayerManager:remove_equipment(equipment_id, slot)
-            local current_equipment = self:selected_equipment()
-            local equipment, index = self:equipment_data_by_name(equipment_id)
-            local new_amount = Application:digest_value(equipment.amount[slot or 1], false) - 1
-            equipment.amount[slot or 1] = Application:digest_value(new_amount, true)
-            if current_equipment and current_equipment.equipment == equipment.equipment then
-                set_hud_item_amount(index, get_as_digested(equipment.amount))
-            end
-            if not slot or slot and slot < 2 then
-                self:update_deployable_equipment_amount_to_peers(equipment.equipment, new_amount)
-            end
+        function PlayerManager:remove_equipment(...)
+            PlayerManager_remove_equipment(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Infinite Equipment - Deactivated', Color.red)
     end
-
 end
 
 toggle_instant_deploy = toggle_instant_deploy or function(info)
     toggleInstantDeploy = not toggleInstantDeploy
 
+    local PlayerManager_selected_equipment_deploy_timer = PlayerManager.selected_equipment_deploy_timer
+
     if toggleInstantDeploy then
         function PlayerManager:selected_equipment_deploy_timer()
             return 0.1
         end
+
         managers.mission._fading_debug_output:script().log('Instant Deploy - Activated', Color.green)
     else
         function PlayerManager:selected_equipment_deploy_timer()
-            return 2
+            PlayerManager_selected_equipment_deploy_timer(self)
         end
+
         managers.mission._fading_debug_output:script().log('Instant Deploy - Deactivated', Color.red)
     end
-	
 end
 
 toggle_infinite_cable_ties = toggle_infinite_cable_ties or function(info)
     toggleInfiniteCableTies = not toggleInfiniteCableTies
 
     if toggleInfiniteCableTies then
-        function PlayerManager:remove_special(name)
-        end
+        tweak_data.upgrades.values.cable_tie.quantity_1 = { 98 }
+
         managers.mission._fading_debug_output:script().log('Infinite Cable Ties - Activated', Color.green)
     else
-        function PlayerManager:remove_special(name)
-            local special_equipment = self._equipment.specials[name]
+        tweak_data.upgrades.values.cable_tie.quantity_1 = { 6 }
 
-            if not special_equipment then
-                return
-            end
-            local special_amount = special_equipment.amount and Application:digest_value(special_equipment.amount, false)
-
-            if special_amount and special_amount ~= -1 then
-                special_amount = math.max(0, special_amount - 1)
-                if special_equipment.is_cable_tie then
-                    managers.hud:set_cable_ties_amount(HUDManager.PLAYER_PANEL, special_amount)
-                    self:update_synced_cable_ties_to_peers(special_amount)
-                else
-                    managers.hud:set_special_equipment_amount(name, special_amount)
-                    self:update_equipment_possession_to_peers(name, special_amount)
-                end
-                special_equipment.amount = Application:digest_value(special_amount, true)
-            end
-
-            if not special_amount or special_amount == 0 then
-                if not special_equipment.is_cable_tie then
-                    managers.hud:remove_special_equipment(name)
-                    managers.network:session():send_to_peers_loaded("sync_remove_equipment_possession",
-                        managers.network:session():local_peer():id(), name)
-                    self:remove_equipment_possession(managers.network:session():local_peer():id(), name)
-                end
-                self._equipment.specials[name] = nil
-                local equipment = tweak_data.equipments.specials[name]
-                if equipment.player_rule then
-                    self:set_player_rule(equipment.player_rule, false)
-                end
-            end
-
-        end
         managers.mission._fading_debug_output:script().log('Infinite Cable Ties - Deactivated', Color.red)
     end
-
 end
 
 toggle_infinite_bodybags = toggle_infinite_bodybags or function(info)
     toggleInfiniteBodyBags = not toggleInfiniteBodyBags
 
+    local PlayerManager_on_used_body_bag = PlayerManager.on_used_body_bag
+
     if toggleInfiniteBodyBags then
         function PlayerManager:on_used_body_bag()
             self:_set_body_bags_amount(self._local_player_body_bags)
         end
+
         managers.mission._fading_debug_output:script().log('Infinite Body Bags - Activated', Color.green)
     else
         function PlayerManager:on_used_body_bag()
-            self:_set_body_bags_amount(self._local_player_body_bags - 1)
+            PlayerManager_on_used_body_bag(self)
         end
+
         managers.mission._fading_debug_output:script().log('Infinite Body Bags - Deactivated', Color.red)
     end
-
 end
 
 instant_mask = instant_mask or function(info)
 
     tweak_data.player.put_on_mask_time = 0
-    managers.mission._fading_debug_output:script().log('Instant Mask On - Activated', Color.green)
 
+    managers.mission._fading_debug_output:script().log('Instant Mask On - Activated', Color.green)
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                Player Skill Options                                                                               --
@@ -2011,42 +1804,47 @@ toggle_six_sense_tweaks = toggle_six_sense_tweaks or function(info)
         tweak_data.player.omniscience.interval_t = 1
         tweak_data.player.omniscience.sense_radius = 1000
         tweak_data.player.omniscience.target_resense_t = 15
+
         managers.mission._fading_debug_output:script().log('Six Sense Tweaks - Activated', Color.green)
     else
         tweak_data.player.omniscience.start_t = 3.5
         tweak_data.player.omniscience.interval_t = 1
         tweak_data.player.omniscience.sense_radius = 1000
         tweak_data.player.omniscience.target_resense_t = 15
+
         managers.mission._fading_debug_output:script().log('Six Sense Tweaks - Deactivated', Color.red)
     end
-
 end
 
 toggle_kick_starter = toggle_kick_starter or function(info)
     toggleKickStarter = not toggleKickStarter
 
+    local PlayerStandard_init = PlayerStandard.init
+    local Drill_on_melee_hit = Drill.on_melee_hit
+
     if toggleKickStarter then
         function Drill:on_melee_hit(peer_id)
             self._unit:interaction():interact(managers.player:player_unit())
         end
-        local playerStandardInit = PlayerStandard.init
+
         function PlayerStandard:init(unit)
-            playerStandardInit(self, unit)
+            PlayerStandard_init(self, unit)
+
             self._on_melee_restart_drill = true
         end
+
         managers.mission._fading_debug_output:script().log('Kick Starter - Activated', Color.green)
     else
         function Drill:on_melee_hit(peer_id)
             self._unit:interaction():interact(managers.player:player_unit())
         end
-        local playerStandardInit = PlayerStandard.init
-        function PlayerStandard:init(unit)
-            playerStandardInit(self, unit)
-            self._on_melee_restart_drill = false
+
+        function PlayerStandard:init(...)
+            Drill_on_melee_hit(self, ...)
         end
+
         managers.mission._fading_debug_output:script().log('Kick Starter - Deactivated', Color.red)
     end
-
 end
 
 toggle_infinite_pecm = toggle_infinite_pecm or function(info)
@@ -2054,12 +1852,13 @@ toggle_infinite_pecm = toggle_infinite_pecm or function(info)
 
     if toggleInfinitePECM then
         tweak_data.projectiles.pocket_ecm_jammer.base_cooldown = 5
+
         managers.mission._fading_debug_output:script().log('Infinite Pocket ECM - Activated', Color.green)
     else
         tweak_data.projectiles.pocket_ecm_jammer.base_cooldown = 100
+
         managers.mission._fading_debug_output:script().log('Infinite Pocket ECM - Deactivated', Color.red)
     end
-
 end
 
 toggle_no_inspire_cooldown = toggle_no_inspire_cooldown or function(info)
@@ -2067,100 +1866,75 @@ toggle_no_inspire_cooldown = toggle_no_inspire_cooldown or function(info)
 
     if toggleNoInspireCooldown then
         tweak_data.upgrades.values.cooldown.long_dis_revive[2] = 1
+
         managers.mission._fading_debug_output:script().log('No Inspire Cooldown - Activated', Color.green)
     else
         tweak_data.upgrades.values.cooldown.long_dis_revive[2] = 20
+
         managers.mission._fading_debug_output:script().log('No Inspire Cooldown - Deactivated', Color.red)
     end
-
 end
 
 toggle_max_dodge = toggle_max_dodge or function(info)
     toggleMaxDodge = not toggleMaxDodge
 
-    if toggleMaxDodge then
-        if not _uvDodge then
-            _uvDodge = PlayerManager.upgrade_value
-        end
+    local PlayerManager_upgrade_value = PlayerManager.upgrade_value
 
-        function PlayerManager:upgrade_value(category, upgrade, default)
+    if toggleMaxDodge then
+        function PlayerManager:upgrade_value(category, upgrade, default, ...)
             if category == "player" and upgrade == "passive_dodge_chance" then
                 return 1
             elseif category == "player" and upgrade == "run_dodge_chance" then
                 return 1
             else
-                return _uvDodge(self, category, upgrade, default)
+                return PlayerManager_upgrade_value(self, category, upgrade, default, ...)
             end
         end
 
         managers.mission._fading_debug_output:script().log('100% Dodge Chance - Activated', Color.green)
     else
-        if not _uvDodge then
-            _uvDodge = PlayerManager.upgrade_value
-        end
-
-        function PlayerManager:upgrade_value(category, upgrade, default)
-            if category == "player" and upgrade == "passive_dodge_chance" then
-                return 0
-            elseif category == "player" and upgrade == "run_dodge_chance" then
-                return 0
-            else
-                return _uvDodge(self, category, upgrade, default)
-            end
+        function PlayerManager:upgrade_value(...)
+            PlayerManager_upgrade_value(self, ...)
         end
 
         managers.mission._fading_debug_output:script().log('100% Dodge Chance - Deactivated', Color.red)
     end
-
 end
 
 toggle_max_armor_piercing = toggle_max_armor_piercing or function(info)
     togglemaxarmorpiercing = not togglemaxarmorpiercing
 
-    if togglemaxarmorpiercing then
-        if not _uvArmorPierce then
-            _uvArmorPierce = PlayerManager.upgrade_value
-        end
+    local PlayerManager_upgrade_value = PlayerManager.upgrade_value
 
-        function PlayerManager:upgrade_value(category, upgrade, default)
+    if togglemaxarmorpiercing then
+        function PlayerManager:upgrade_value(category, upgrade, default, ...)
             if category == "weapon" and upgrade == "armor_piercing_chance" then
                 return 1
             elseif category == "weapon" and upgrade == "armor_piercing_chance_silencer" then
                 return 1
             else
-                return _uvArmorPierce(self, category, upgrade, default)
+                return PlayerManager_upgrade_value(self, category, upgrade, default, ...)
             end
         end
 
         managers.mission._fading_debug_output:script().log('100% Armor Piercing Chance - Activated', Color.green)
     else
-        if not _uvArmorPierce then
-            _uvArmorPierce = PlayerManager.upgrade_value
-        end
-
-        function PlayerManager:upgrade_value(category, upgrade, default)
-            if category == "weapon" and upgrade == "armor_piercing_chance" then
-                return 0.25
-            elseif category == "weapon" and upgrade == "armor_piercing_chance_silencer" then
-                return 0.2
-            else
-                return _uvArmorPierce(self, category, upgrade, default)
-            end
+        function PlayerManager:upgrade_value(...)
+            PlayerManager_upgrade_value(self, ...)
         end
 
         managers.mission._fading_debug_output:script().log('100% Armor Piercing Chance - Deactivated', Color.red)
     end
-
 end
 
 toggle_max_crit = toggle_max_crit or function(info)
     togglemaxcrit = not togglemaxcrit
 
-    if togglemaxcrit then
-        local data = UpgradesTweakData._init_pd2_values
+    local UpgradesTweakData_init_pd2_values = UpgradesTweakData._init_pd2_values
 
+    if togglemaxcrit then
         function UpgradesTweakData:_init_pd2_values()
-            data(self, tweak_data)
+            UpgradesTweakData_init_pd2_values(self, tweak_data)
             self.values.player.detection_risk_add_crit_chance = 
 			{{
 				1, 
@@ -2180,10 +1954,8 @@ toggle_max_crit = toggle_max_crit or function(info)
 
         managers.mission._fading_debug_output:script().log('100% Crit Chance - Activated', Color.green)
     else
-        local data = UpgradesTweakData._init_pd2_values
-
         function UpgradesTweakData:_init_pd2_values()
-            data(self, tweak_data)
+            UpgradesTweakData_init_pd2_values(self, tweak_data)
             self.values.player.detection_risk_add_crit_chance = 
 			{{
 				0.03, 
@@ -2203,46 +1975,38 @@ toggle_max_crit = toggle_max_crit or function(info)
 		
         managers.mission._fading_debug_output:script().log('100% Crit Chance - Deactivated', Color.red)
     end
-
 end
 
 toggle_infinite_jokers = toggle_infinite_jokers or function(info)
     toggleinfinitejokers = not toggleinfinitejokers
 
-    if toggleinfinitejokers then
-        if not _upgradeValueIntimidate then
-            _upgradeValueIntimidate = PlayerManager.upgrade_value
-        end
+    local PlayerManager_upgrade_value = PlayerManager.upgrade_value
 
+    if toggleinfinitejokers then
         function PlayerManager:upgrade_value(category, upgrade, default)
             if category == "player" and upgrade == "convert_enemies" then
                 return true
             elseif category == "player" and upgrade == "convert_enemies_max_minions" then
                 return 500
             else
-                return _upgradeValueIntimidate(self, category, upgrade, default)
+                return PlayerManager_upgrade_value(self, category, upgrade, default)
             end
         end
 
         managers.mission._fading_debug_output:script().log('Infinite Jokers - Activated', Color.green)
     else
-        if not _upgradeValueIntimidate then
-            _upgradeValueIntimidate = PlayerManager.upgrade_value
-        end
-
         function PlayerManager:upgrade_value(category, upgrade, default)
             if category == "player" and upgrade == "convert_enemies" then
                 return true
             elseif category == "player" and upgrade == "convert_enemies_max_minions" then
                 return 2
             else
-                return _upgradeValueIntimidate(self, category, upgrade, default)
+                return PlayerManager_upgrade_value(self, category, upgrade, default)
             end
         end
 
         managers.mission._fading_debug_output:script().log('Infinite Jokers - Deactivated', Color.red)
     end
-
 end
 
 toggle_infinite_following_hostages = toggle_infinite_following_hostages or function(info)
@@ -2250,29 +2014,33 @@ toggle_infinite_following_hostages = toggle_infinite_following_hostages or funct
 
     if toggleinfinitefollowinghostages then
         tweak_data.player.max_nr_following_hostages = 1000
+
         managers.mission._fading_debug_output:script().log('Infinite Following Hostages - Activated', Color.green)
     else
         tweak_data.player.max_nr_following_hostages = 2
+
         managers.mission._fading_debug_output:script().log('Infinite Following Hostages - Deactivated', Color.red)
     end
-
 end
 
 toggle_infinite_ecm = toggle_infinite_ecm or function(info)
     toggleinfiniteecm = not toggleinfiniteecm
 
+    local ECMJammerBase_update = ECMJammerBase.update
+
     if toggleinfiniteecm then
         function ECMJammerBase:update()
             self._battery_life = self._max_battery_life
         end
+
         managers.mission._fading_debug_output:script().log('Infinite ECM - Activated', Color.green)
     else
         function ECMJammerBase:update()
-            self._battery_life = self._battery_life - dt
+            ECMJammerBase_update(self)
         end
+
         managers.mission._fading_debug_output:script().log('Infinite ECM - Deactivated', Color.red)
     end
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                 Player Options                                                                                    --
@@ -2282,25 +2050,27 @@ toggle_god_mode = toggle_god_mode or function(info)
 
     if toggleGodMode then
         managers.player:player_unit():character_damage():set_invulnerable(true)
+
         managers.mission._fading_debug_output:script().log('God Mode - Activated', Color.green)
     else
         managers.player:player_unit():character_damage():set_invulnerable(false)
+
         managers.mission._fading_debug_output:script().log('God Mode - Deactivated', Color.red)
     end
-
 end
 
 toggle_invisible = toggle_invisible or function(info)
 
     function update_invisible_state(state)
-        local statetable = {"Standard", "Civilian", "MaskOff", "Clean", "BleedOut", "ParaChuting", "Incapacitated",
-                            "Carry", "Arrested"}
+        local statetable = {"Standard", "Civilian", "MaskOff", "Clean", "BleedOut", "ParaChuting", "Incapacitated", "Carry", "Arrested"}
+
         if alive(managers.player:player_unit()) then
             for id, state_table in pairs(statetable) do
                 Hooks:Add("Player" .. state_table .. "Update", "UpdateMovState" .. id, function(t, dt)
                     self:_upd_attention()
                 end)
             end
+
             managers.player:player_unit():movement():set_attention_settings({state})
         end
     end
@@ -2312,65 +2082,57 @@ toggle_invisible = toggle_invisible or function(info)
             if not orig then
                 orig = HUDManager.update
             end
+
             function HUDManager:update(t, dt)
                 orig(self, t, dt)
                 update_invisible_state("pl_civilian")
             end
         end
+
         managers.mission._fading_debug_output:script().log('Invisible - Activated', Color.green)
     else
         update_invisible_state("pl_mask_on_foe_combatant_whisper_mode_stand")
         update_invisible_state("pl_mask_on_foe_combatant_whisper_mode_crouch")
+
         if orig then
             HUDManager.update = orig
         end
+
         managers.mission._fading_debug_output:script().log('Invisible - Deactivated', Color.red)
     end
 
     global_detection_toggle = not global_detection_toggle
-
 end
 
 remove_hit_disorientation = remove_hit_disorientation or function(info)
 
-    function CoreEnvironmentControllerManager:hit_feedback_front()
-    end
+    function CoreEnvironmentControllerManager:hit_feedback_front() end
 
-    function CoreEnvironmentControllerManager:hit_feedback_back()
-    end
+    function CoreEnvironmentControllerManager:hit_feedback_back() end
 
-    function CoreEnvironmentControllerManager:hit_feedback_right()
-    end
+    function CoreEnvironmentControllerManager:hit_feedback_right() end
 
-    function CoreEnvironmentControllerManager:hit_feedback_left()
-    end
+    function CoreEnvironmentControllerManager:hit_feedback_left() end
 
-    function CoreEnvironmentControllerManager:hit_feedback_up()
-    end
+    function CoreEnvironmentControllerManager:hit_feedback_up() end
 
-    function CoreEnvironmentControllerManager:hit_feedback_down()
-    end
+    function CoreEnvironmentControllerManager:hit_feedback_down() end
 
     managers.mission._fading_debug_output:script().log('Remove Hit Disorientation - Activated', Color.green)
-
 end
 
 remove_recoil = remove_recoil or function(info)
 
-    function PlayerCamera:play_shaker()
-    end
+    function PlayerCamera:play_shaker() end
 
     managers.mission._fading_debug_output:script().log('Remove Camera Recoil - Activated', Color.green)
-
 end
 
 remove_camera_limits = remove_camera_limits or function(info)
 
-    function FPCameraPlayerBase:set_limits(spin, pitch)
-    end
+    function FPCameraPlayerBase:set_limits(...) end
 
     managers.mission._fading_debug_output:script().log('Remove Camera Limits - Activated', Color.green)
-
 end
 
 remove_headbob = remove_headbob or function(info)
@@ -2380,16 +2142,13 @@ remove_headbob = remove_headbob or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Headbob - Activated', Color.green)
-
 end
 
 remove_explosion_shake = remove_explosion_shake or function(info)
 
-    function ExplosionManager:player_feedback()
-    end
+    function ExplosionManager:player_feedback() end
 
     managers.mission._fading_debug_output:script().log('Remove Explosion Shake - Activated', Color.green)
-
 end
 
 remove_flashbang = remove_flashbang or function(info)
@@ -2398,20 +2157,16 @@ remove_flashbang = remove_flashbang or function(info)
         self:_stop_tinnitus()
     end
 
-    function CoreEnvironmentControllerManager:set_flashbang(...)
-    end
+    function CoreEnvironmentControllerManager:set_flashbang(...) end
 
     managers.mission._fading_debug_output:script().log('Remove Flashbang - Activated', Color.green)
-
 end
 
 remove_weapon_sway = remove_weapon_sway or function(info)
-    if not _PlayerTweakData_init then
-        _PlayerTweakData_init = PlayerTweakData.init
-    end
+    PlayerTweakData_init = PlayerTweakData.init
 
     function PlayerTweakData:init()
-        _PlayerTweakData_init(self)
+        PlayerTweakData_init(self)
 
         for k, v in pairs(self.stances) do
             v.standard.shakers.breathing.amplitude = 0
@@ -2422,7 +2177,6 @@ remove_weapon_sway = remove_weapon_sway or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Weapon Sway - Activated', Color.green)
-
 end
 
 remove_camera_rotation = remove_camera_rotation or function(info)
@@ -2433,7 +2187,6 @@ remove_camera_rotation = remove_camera_rotation or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Camera Rotation When Holding A Bag - Activated', Color.green)
-
 end
 
 remove_detection_in_casing = remove_detection_in_casing or function(info)
@@ -2445,7 +2198,6 @@ remove_detection_in_casing = remove_detection_in_casing or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Remove Detection Risk While In Casing Mode - Activated', Color.green)
-
 end
 
 counter_cloakers = counter_cloakers or function(info)
@@ -2455,7 +2207,6 @@ counter_cloakers = counter_cloakers or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Counter Cloakers - Activated', Color.green)
-
 end
 
 replenish = replenish or function(info)
@@ -2465,9 +2216,9 @@ replenish = replenish or function(info)
     local set_player_state = M_player.set_player_state
     local add_grenade_amount = M_player.add_grenade_amount
     local alive = alive
+    local ply = players_list[1]
 
-    local function REPLENISH()
-        local ply = players_list[1]
+    local function replenish_player()
         if alive(ply) then
             ply:base():replenish()
             set_player_state(M_player, 'standard')
@@ -2475,7 +2226,7 @@ replenish = replenish or function(info)
         end
     end
 
-	REPLENISH()
+	replenish_player()
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                Preplanning Options                                                                                --
@@ -2487,14 +2238,13 @@ infinite_favors = infinite_favors or function(info)
     end
 
     managers.mission._fading_debug_output:script().log('Infinite Favors - Activated', Color.green)
-
 end
 
 infinite_drawing_points = infinite_drawing_points or function(info)
 
     tweak_data.preplanning.gui.MAX_DRAW_POINTS = math.huge
-    managers.mission._fading_debug_output:script().log('Infinite Drawing Points - Activated', Color.green)
 
+    managers.mission._fading_debug_output:script().log('Infinite Drawing Points - Activated', Color.green)
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                              Player Progress Options                                                                              --
@@ -2506,7 +2256,6 @@ set_infamy_1 = set_infamy_1 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_2 = set_infamy_2 or function(info)
@@ -2516,7 +2265,6 @@ set_infamy_2 = set_infamy_2 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_4 = set_infamy_3 or function(info)
@@ -2526,7 +2274,6 @@ set_infamy_4 = set_infamy_3 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_4 = set_infamy_4 or function(info)
@@ -2536,7 +2283,6 @@ set_infamy_4 = set_infamy_4 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_5 = set_infamy_5 or function(info)
@@ -2546,7 +2292,6 @@ set_infamy_5 = set_infamy_5 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_6 = set_infamy_6 or function(info)
@@ -2565,7 +2310,6 @@ set_infamy_7 = set_infamy_7 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_8 = set_infamy_8 or function(info)
@@ -2575,7 +2319,6 @@ set_infamy_8 = set_infamy_8 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 set_infamy_9 = set_infamy_9 or function(info)
@@ -2585,7 +2328,6 @@ set_infamy_9 = set_infamy_9 or function(info)
     end
 
     set_infamy_level()
-
 end
 
 reset_infamy = reset_infamy or function(info)
@@ -2613,7 +2355,6 @@ set_reputation_2 = set_reputation_2 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_3 = set_reputation_3 or function(info)
@@ -2623,7 +2364,6 @@ set_reputation_3 = set_reputation_3 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_4 = set_reputation_4 or function(info)
@@ -2633,7 +2373,6 @@ set_reputation_4 = set_reputation_4 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_5 = set_reputation_5 or function(info)
@@ -2643,7 +2382,6 @@ set_reputation_5 = set_reputation_5 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_6 = set_reputation_6 or function(info)
@@ -2653,7 +2391,6 @@ set_reputation_6 = set_reputation_6 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_7 = set_reputation_7 or function(info)
@@ -2663,7 +2400,6 @@ set_reputation_7 = set_reputation_7 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_8 = set_reputation_8 or function(info)
@@ -2673,7 +2409,6 @@ set_reputation_8 = set_reputation_8 or function(info)
     end
 
     change_level()
-
 end
 
 set_reputation_9 = set_reputation_9 or function(info)
@@ -2683,7 +2418,6 @@ set_reputation_9 = set_reputation_9 or function(info)
     end
 
     change_level()
-
 end
 
 reset_reputation = reset_reputation or function(info)
@@ -2693,7 +2427,6 @@ reset_reputation = reset_reputation or function(info)
     end
 
     reset_level()
-
 end
 
 add_money_1 = add_money_1 or function(info)
@@ -2703,7 +2436,6 @@ add_money_1 = add_money_1 or function(info)
     end
 
     add_money()
-
 end
 
 add_money_2 = add_money_2 or function(info)
@@ -2964,7 +2696,7 @@ end
 --                                                                                 Complete All Side Jobs                                                                            --
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 complete_all_side_jobs = complete_all_side_jobs or function(info)
-    local original_complete_daily = original_complete_daily or CustomSafehouseManager.set_active_daily
+    local CustomSafehouseManager_set_active_daily = CustomSafehouseManager.set_active_daily
 
     function CustomSafehouseManager:set_active_daily(id)
         if self:get_daily_challenge() and self:get_daily_challenge().id ~= id then
@@ -2972,7 +2704,7 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
         end
         self:complete_and_reward_daily(id)
 
-        return original_complete_daily(self, id)
+        return CustomSafehouseManager_set_active_daily(self, id)
     end
 
     function CustomSafehouseManager:has_rewarded_daily()
@@ -2987,7 +2719,7 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
         return self:_get_daily_state() == "rewarded" and is_just_completed
     end
 
-    local regular_challenges = regular_challenges or ChallengeManager.activate_challenge
+    local ChallengeManager_activate_challenge = ChallengeManager.activate_challenge
 
     function ChallengeManager:activate_challenge(id, key, category)
         if self:has_active_challenges(id, key) then
@@ -3000,10 +2732,10 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
             return true
         end
 
-        return regular_challenges(self, id, key, category)
+        return ChallengeManager_activate_challenge(self, id, key, category)
     end
 
-    local side_jobs = side_jobs or SideJobEventManager.load
+    local SideJobEventManager_load = SideJobEventManager.load
 
     function SideJobEventManager:load(cache, version)
         local state = cache[self.save_table_name]
@@ -3012,10 +2744,10 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
                 saved_challenge.completed = true
             end
         end
-        return side_jobs(self, cache, version)
+        return SideJobEventManager_load(self, cache, version)
     end
 
-    local event_missions = event_missions or EventManager.load
+    local EventManager_load = EventManager.load
 
     if event_missions then
         function EventManager:load(cache, version)
@@ -3025,11 +2757,11 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
                     saved_challenge.completed = true
                 end
             end
-            return event_missions(self, cache, version)
+            return EventManager_load(self, cache, version)
         end
     end
 
-    local gage_spec_ops_missions = gage_spec_ops_missions or TangoManager.load
+    local TangoManager_load = TangoManager.load
 
     function TangoManager:load(cache, version)
         local state = cache.Tango
@@ -3038,10 +2770,10 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
                 saved_challenge.completed = true
             end
         end
-        return gage_spec_ops_missions(self, cache, version)
+        return TangoManager_load(self, cache, version)
     end
 
-    local aldstones_heritage_jobs = aldstones_heritage_jobs or SideJobGenericDLCManager.load
+    local SideJobGenericDLCManager_load = SideJobGenericDLCManager.load
 
     function SideJobGenericDLCManager:load(cache, version)
         local state = cache[self.save_table_name]
@@ -3050,9 +2782,8 @@ complete_all_side_jobs = complete_all_side_jobs or function(info)
                 saved_challenge.completed = true
             end
         end
-        return aldstones_heritage_jobs(self, cache, version)
+        return SideJobGenericDLCManager_load(self, cache, version)
     end
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                 Safe House Options                                                                              --
@@ -3078,7 +2809,6 @@ max_safehouse_rooms = max_safehouse_rooms or function(info)
     end
 
     max_rooms_tier()
-
 end
 
 set_continental_coins_1 = set_continental_coins_1 or function(info)
@@ -3088,7 +2818,6 @@ set_continental_coins_1 = set_continental_coins_1 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_2 = set_continental_coins_2 or function(info)
@@ -3098,7 +2827,6 @@ set_continental_coins_2 = set_continental_coins_2 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_3 = set_continental_coins_3 or function(info)
@@ -3108,7 +2836,6 @@ set_continental_coins_3 = set_continental_coins_3 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_4 = set_continental_coins_4 or function(info)
@@ -3118,7 +2845,6 @@ set_continental_coins_4 = set_continental_coins_4 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_5 = set_continental_coins_5 or function(info)
@@ -3128,7 +2854,6 @@ set_continental_coins_5 = set_continental_coins_5 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_6 = set_continental_coins_6 or function(info)
@@ -3138,7 +2863,6 @@ set_continental_coins_6 = set_continental_coins_6 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_7 = set_continental_coins_7 or function(info)
@@ -3148,7 +2872,6 @@ set_continental_coins_7 = set_continental_coins_7 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_8 = set_continental_coins_8 or function(info)
@@ -3158,7 +2881,6 @@ set_continental_coins_8 = set_continental_coins_8 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 set_continental_coins_9 = set_continental_coins_9 or function(info)
@@ -3168,7 +2890,6 @@ set_continental_coins_9 = set_continental_coins_9 or function(info)
     end
 
     set_continental_coins()
-
 end
 
 reset_continental_coins = reset_continental_coins or function(info)
@@ -3178,7 +2899,6 @@ reset_continental_coins = reset_continental_coins or function(info)
     end
 
     reset_continental_coins()
-
 end
 
 disable_safehouse_raid = disable_safehouse_raid or function(info)
@@ -3186,14 +2906,13 @@ disable_safehouse_raid = disable_safehouse_raid or function(info)
     function CustomSafehouseManager:is_being_raided()
         return false
     end
-
 end
 
 complete_all_trophies = complete_all_trophies or function(info)
-    local M_safehouse = managers.custom_safehouse
-
     local function unlock_safehouse_trophies()
+        local M_safehouse = managers.custom_safehouse
         local trophies = M_safehouse:trophies()
+
         for _, trophy in pairs(trophies) do
             for objective_id in pairs(trophy.objectives) do
                 local objective = trophy.objectives[objective_id]
@@ -3204,21 +2923,19 @@ complete_all_trophies = complete_all_trophies or function(info)
     end
 
     unlock_safehouse_trophies()
-
 end
 
 complete_all_achievements = complete_all_achievements or function(info)
     local M_achievement = managers.achievment
+    local _award = M_achievement.award
 
     local function complete_achievements()
-        local _award = M_achievement.award
         for id in pairs(M_achievement.achievments) do
             _award(M_achievement, id)
         end
     end
 
     complete_achievements()
-
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                   Unlock All Options                                                                              --
@@ -3235,7 +2952,6 @@ unlock_all_inventory_slots = unlock_all_inventory_slots or function(info)
         unlocked_primaries[i] = true
         unlocked_secondaries[i] = true
     end
-
 end
 
 unlock_all_items = unlock_all_items or function(info)
@@ -3293,14 +3009,13 @@ unlock_all_items = unlock_all_items or function(info)
             return "normal"
         end
     end
-
 end
 
 smart_unloker = smart_unloker or function(info)
-    local original_verify_dlcs = WINDLCManager._verify_dlcs
+    local WINDLCManager_verify_dlcs = WINDLCManager._verify_dlcs
  
     function WINDLCManager:_verify_dlcs()
-        original_verify_dlcs(self)
+        WINDLCManager_verify_dlcs(self)
 
         for dlc_name, dlc_data in pairs(Global.dlc_manager.all_dlc_data) do
             if dlc_data.external or not dlc_data.app_id or dlc_data.app_id == "218620" then
@@ -3310,16 +3025,15 @@ smart_unloker = smart_unloker or function(info)
         
     end
     
-    local original_check_dlc_data = WinSteamDLCManager._check_dlc_data
+    local WinSteamDLCManager_check_dlc_data = WinSteamDLCManager._check_dlc_data
     
     function WinSteamDLCManager:_check_dlc_data(dlc_data)
         if dlc_data.verified then
             return true
         end
         
-        return original_check_dlc_data(self, dlc_data)
+        return WinSteamDLCManager_check_dlc_data(self, dlc_data)
     end
-    
 end
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --                                                                                      Open Menu                                                                                    --
@@ -3779,9 +3493,11 @@ if inGame() then
 		{ text = "Alarm Options", callback = call_alarm }, 
 		{ text = "Player Interaction Options", callback = call_player_interaction }, 
 		{ text = "Player Movement Options", callback = call_player_movement }, 
-		{ text = "Player Weapon Options", callback = call_player_weapon }, { text = "Player Equipment Options", callback = call_player_equipment }, 
+		{ text = "Player Weapon Options", callback = call_player_weapon }, 
+        { text = "Player Equipment Options", callback = call_player_equipment }, 
 		{ text = "Player Options", callback = call_player }, 
-		{ text = "Heist Options", callback = call_heist }, { text = "Preplanning Options", callback = call_preplanning }, 
+		{ text = "Heist Options", callback = call_heist }, 
+        { text = "Preplanning Options", callback = call_preplanning }, 
 		{ text = "Player Skill Options", callback = call_player_skill }, 
 		{},
 
