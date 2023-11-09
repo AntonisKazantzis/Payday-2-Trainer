@@ -1,0 +1,17 @@
+{
+	"name": "name",
+	"version": "1.0",
+	"blt_version": 2,
+	"keybinds" : 
+	[
+		{
+			"keybind_id" : "Trainer",
+			"name" : "Payday 2 Trainer",
+			"description" : "Payday 2 Trainer By Lucifer",
+			"script_path" : "p2t.lua",
+			"run_in_menu" : true,
+			"run_in_game" : true,
+			"localized" : false
+        }
+	]
+}
