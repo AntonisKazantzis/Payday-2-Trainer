@@ -1,0 +1,1 @@
+function NetworkAccountSTEAM:publish_statistics( stats, force_store ) end
