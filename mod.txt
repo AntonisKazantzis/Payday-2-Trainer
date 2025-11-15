@@ -1,8 +1,8 @@
 {
 	"name": "Payday 2 Trainer",
-	"description": "Trainer: v2.0 \nCreator: AntonisK",
+	"description": "Payday 2 Trainer: v2.0 \nCreator: AntonisK",
 	"author": "AntonisK",
-	"contact": "UnKnoWnCheaTs: https://www.unknowncheats.me/forum/members/5273363.html",
+	"contact": "https://github.com/AntonisKazantzis/Payday-2-Trainer",
 	"version": "v2.0",
 	"blt_version": 2,
 	"priority":	0994,
